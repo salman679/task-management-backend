@@ -34,6 +34,7 @@ async function run() {
     await client.connect();
     const db = client.db("Task-Management");
     const taskCollection = db.collection("Tasks");
+    const userCollection = db.collection("Users");
 
     // WebSocket Connection
     io.on("connection", (socket) => {
@@ -92,6 +93,21 @@ async function run() {
       await taskCollection.deleteOne(filter);
       io.emit("taskDeleted", id);
       res.send({ message: "Task deleted" });
+    });
+
+    // REST APIs for Users
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const query = { email: user.email };
+      const existingUser = await userCollection.findOne(query);
+
+      if (existingUser) {
+        res.send({ message: "User already exists" });
+        return;
+      }
+
+      const result = await userCollection.insertOne(user);
+      res.send(result);
     });
 
     console.log("Connected to MongoDB!");
